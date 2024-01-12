@@ -675,6 +675,10 @@ const uint16_t SFE_UBLOX_DAYS_SINCE_MONTH[2][12] =
         {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334}  // Normal Year
 };
 
+const uint32_t SFE_UBLOX_JAN_1ST_2020_WEEK = 2086; // GPS Week Number for Jan 1st 2020
+const uint32_t SFE_UBLOX_EPOCH_WEEK_2086 = 1577836800 - 259200; // Epoch for the start of GPS week 2086
+const uint32_t SFE_UBLOX_SECS_PER_WEEK = 60 * 60 * 24 * 7; // Seconds per week
+
 class SFE_UBLOX_GNSS
 {
 public:
@@ -1287,6 +1291,15 @@ public:
   void flushTIMTM2();                                                                                                 // Mark all the data as read/stale
   void logTIMTM2(bool enabled = true);                                                                                // Log data to file buffer
 
+  bool getTIMTP(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                                                                                                    // TIM TP
+  bool setAutoTIMTP(bool enabled, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                                               // Enable/disable automatic TIM TP reports at the navigation frequency
+  bool setAutoTIMTP(bool enabled, bool implicitUpdate, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                          // Enable/disable automatic TIM TP reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoTIMTPrate(uint8_t rate, bool implicitUpdate = true, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);               // Set the rate for automatic TIM TP reports
+  bool setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP_data_t *), uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait); // Enable automatic TP reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoTIMTP(bool enabled, bool implicitUpdate = true);                                                                                                // In case no config access to the GPS is possible and TIM TP is send cyclically already
+  void flushTIMTP();                                                                                                                                             // Mark all the data as read/stale
+  void logTIMTP(bool enabled = true);                                                                                                                            // Log data to file buffer
+
   // Sensor fusion (dead reckoning) (ESF)
 
   bool getEsfAlignment(uint16_t maxWait = defaultMaxWait);                                                            // ESF ALG Helper
@@ -1508,6 +1521,13 @@ public:
   uint8_t getAOPSTATUSuseAOP(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS useAOP flag. Don't confuse this with getAopCfg - which returns the aopCfg byte from UBX-CFG-NAVX5
   uint8_t getAOPSTATUSstatus(uint16_t maxWait = defaultMaxWait); // Returns the UBX-NAV-AOPSTATUS status field. A host application can determine the optimal time to shut down the receiver by monitoring the status field for a steady 0.
 
+  // Helper functions for TIM TP
+
+  uint32_t getTIMTPtowMS(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                          // Returns the UBX-TIM-TP towMS time pulse of week (ms)
+  uint32_t getTIMTPtowSubMS(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                       // Returns the UBX-TIM-TP submillisecond part of towMS (ms * 2^-32)
+  uint16_t getTIMTPweek(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                           // Returns the UBX-TIM-TP time pulse week according to time base
+  uint32_t getTIMTPAsEpoch(uint32_t &microsecond, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait); // Convert TIM TP to Unix Epoch - CAUTION! Assumes the time base is UTC and the week number is GPS
+
   // Helper functions for ESF
 
   float getESFroll(uint16_t maxWait = defaultMaxWait);  // Returned as degrees
@@ -1612,6 +1632,7 @@ public:
   UBX_CFG_RATE_t *packetUBXCFGRATE = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
   UBX_TIM_TM2_t *packetUBXTIMTM2 = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
+  UBX_TIM_TP_t *packetUBXTIMTP = NULL; // Pointer to struct. RAM will be allocated for this if/when necessary
 
   UBX_ESF_ALG_t *packetUBXESFALG = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
   UBX_ESF_INS_t *packetUBXESFINS = NULL;       // Pointer to struct. RAM will be allocated for this if/when necessary
@@ -1703,6 +1724,7 @@ private:
   bool initPacketUBXCFGPRT();           // Allocate RAM for packetUBXCFGPRT and initialize it
   bool initPacketUBXCFGRATE();          // Allocate RAM for packetUBXCFGRATE and initialize it
   bool initPacketUBXTIMTM2();           // Allocate RAM for packetUBXTIMTM2 and initialize it
+  bool initPacketUBXTIMTP();            // Allocate RAM for packetUBXTIMTP and initialize it
   bool initPacketUBXESFALG();           // Allocate RAM for packetUBXESFALG and initialize it
   bool initPacketUBXESFSTATUS();        // Allocate RAM for packetUBXESFSTATUS and initialize it
   bool initPacketUBXESFINS();           // Allocate RAM for packetUBXESFINS and initialize it
