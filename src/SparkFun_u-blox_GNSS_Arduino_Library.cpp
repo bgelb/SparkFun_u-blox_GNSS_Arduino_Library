@@ -4204,7 +4204,7 @@ void SFE_UBLOX_GNSS::processUBXpacket(ubxPacket *msg)
         // Check if we need to copy the data into the file buffer
         if (packetUBXTIMTP->automaticFlags.flags.bits.addToFileBuffer)
         {
-          addedToFileBuffer = storePacket(msg);
+          storePacket(msg);
         }
       }
     }
@@ -14293,7 +14293,7 @@ void SFE_UBLOX_GNSS::logTIMTM2(bool enabled)
 
 // ***** TIM TP automatic support
 
-bool DevUBLOXGNSS::getTIMTP(uint16_t maxWait)
+bool SFE_UBLOX_GNSS::getTIMTP(uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
     initPacketUBXTIMTP();        // Check that RAM has been allocated for the TP data
@@ -14335,54 +14335,51 @@ bool DevUBLOXGNSS::getTIMTP(uint16_t maxWait)
 }
 
 // Enable or disable automatic message generation by the GNSS. This changes the way getTIMTP works.
-bool DevUBLOXGNSS::setAutoTIMTP(bool enable, uint8_t layer, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setAutoTIMTP(bool enable, uint16_t maxWait)
 {
-  return setAutoTIMTPrate(enable ? 1 : 0, true, layer, maxWait);
+  return setAutoTIMTPrate(enable ? 1 : 0, true, maxWait);
 }
 
 // Enable or disable automatic message generation by the GNSS. This changes the way getTIMTP works.
-bool DevUBLOXGNSS::setAutoTIMTP(bool enable, bool implicitUpdate, uint8_t layer, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setAutoTIMTP(bool enable, bool implicitUpdate, uint16_t maxWait)
 {
-  return setAutoTIMTPrate(enable ? 1 : 0, implicitUpdate, layer, maxWait);
+  return setAutoTIMTPrate(enable ? 1 : 0, implicitUpdate, maxWait);
 }
 
 // Enable or disable automatic message generation by the GNSS. This changes the way getTIMTP works.
-bool DevUBLOXGNSS::setAutoTIMTPrate(uint8_t rate, bool implicitUpdate, uint8_t layer, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setAutoTIMTPrate(uint8_t rate, bool implicitUpdate, uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
-    initPacketUBXTIMTP();        // Check that RAM has been allocated for the data
+    initPacketUBXTIMTP();     // Check that RAM has been allocated for the data
   if (packetUBXTIMTP == NULL) // Only attempt this if RAM allocation was successful
     return false;
 
   if (rate > 127)
     rate = 127;
 
-  uint32_t key = UBLOX_CFG_MSGOUT_UBX_TIM_TP_I2C;
-  if (_commType == COMM_TYPE_SPI)
-    key = UBLOX_CFG_MSGOUT_UBX_TIM_TP_SPI;
-  else if (_commType == COMM_TYPE_SERIAL)
-  {
-    if (!_UART2)
-      key = UBLOX_CFG_MSGOUT_UBX_TIM_TP_UART1;
-    else
-      key = UBLOX_CFG_MSGOUT_UBX_TIM_TP_UART2;
-  }
+  packetCfg.cls = UBX_CLASS_CFG;
+  packetCfg.id = UBX_CFG_MSG;
+  packetCfg.len = 3;
+  packetCfg.startingSpot = 0;
+  payloadCfg[0] = UBX_CLASS_TIM;
+  payloadCfg[1] = UBX_TIM_TP;
+  payloadCfg[2] = rate; // rate relative to navigation freq.
 
-  bool ok = setVal8(key, rate, layer, maxWait);
+  bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXTIMTP->automaticFlags.flags.bits.automatic = (rate > 0);
-    packetUBXTIMTP->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+    packetUBXTIMTM2->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
-  packetUBXTIMTP->moduleQueried.moduleQueried.bits.all = false;
+  packetUBXTIMTM2->moduleQueried.moduleQueried.bits.all = false;
   return ok;
 }
 
 // Enable automatic message generation by the GNSS.
-bool DevUBLOXGNSS::setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP_data_t *), uint8_t layer, uint16_t maxWait)
+bool SFE_UBLOX_GNSS::setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP_data_t *), uint16_t maxWait)
 {
   // Enable auto messages. Set implicitUpdate to false as we expect the user to call checkUblox manually.
-  bool result = setAutoTIMTP(true, false, layer, maxWait);
+  bool result = setAutoTIMTP(true, false, maxWait);
   if (!result)
     return (result); // Bail if setAuto failed
 
@@ -14395,7 +14392,7 @@ bool DevUBLOXGNSS::setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial.println(F("setAutoTIMTPcallbackPtr: RAM alloc failed!"));
+      _debugSerial->println(F("setAutoTIMTPcallbackPtr: RAM alloc failed!"));
 #endif
     return (false);
   }
@@ -14406,7 +14403,7 @@ bool DevUBLOXGNSS::setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP
 
 // In case no config access to the GNSS is possible and TIM TP is send cyclically already
 // set config to suitable parameters
-bool DevUBLOXGNSS::assumeAutoTIMTP(bool enabled, bool implicitUpdate)
+bool SFE_UBLOX_GNSS::assumeAutoTIMTP(bool enabled, bool implicitUpdate)
 {
   if (packetUBXTIMTP == NULL)
     initPacketUBXTIMTP();        // Check that RAM has been allocated for the data
@@ -14423,14 +14420,14 @@ bool DevUBLOXGNSS::assumeAutoTIMTP(bool enabled, bool implicitUpdate)
 }
 
 // PRIVATE: Allocate RAM for packetUBXTIMTP and initialize it
-bool DevUBLOXGNSS::initPacketUBXTIMTP()
+bool SFE_UBLOX_GNSS::initPacketUBXTIMTP()
 {
   packetUBXTIMTP = new UBX_TIM_TP_t; // Allocate RAM for the main struct
   if (packetUBXTIMTP == NULL)
   {
 #ifndef SFE_UBLOX_REDUCED_PROG_MEM
     if ((_printDebug == true) || (_printLimitedDebug == true)) // This is important. Print this if doing limited debugging
-      _debugSerial.println(F("initPacketUBXTIMTP: RAM alloc failed!"));
+      _debugSerial->println(F("initPacketUBXTIMTP: RAM alloc failed!"));
 #endif
     return (false);
   }
@@ -14442,7 +14439,7 @@ bool DevUBLOXGNSS::initPacketUBXTIMTP()
 }
 
 // Mark all the data as read/stale
-void DevUBLOXGNSS::flushTIMTP()
+void SFE_UBLOX_GNSS::flushTIMTP()
 {
   if (packetUBXTIMTP == NULL)
     return;                                             // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
@@ -14450,7 +14447,7 @@ void DevUBLOXGNSS::flushTIMTP()
 }
 
 // Log this data in file buffer
-void DevUBLOXGNSS::logTIMTP(bool enabled)
+void SFE_UBLOX_GNSS::logTIMTP(bool enabled)
 {
   if (packetUBXTIMTP == NULL)
     return; // Bail if RAM has not been allocated (otherwise we could be writing anywhere!)
@@ -18539,7 +18536,7 @@ uint8_t SFE_UBLOX_GNSS::getAOPSTATUSstatus(uint16_t maxWait)
 
 // ***** TIM TP Helper Functions
 
-uint32_t DevUBLOXGNSS::getTIMTPtowMS(uint16_t maxWait)
+uint32_t SFE_UBLOX_GNSS::getTIMTPtowMS(uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
     initPacketUBXTIMTP();        // Check that RAM has been allocated for the TP data
@@ -18553,7 +18550,7 @@ uint32_t DevUBLOXGNSS::getTIMTPtowMS(uint16_t maxWait)
   return (packetUBXTIMTP->data.towMS);
 }
 
-uint32_t DevUBLOXGNSS::getTIMTPtowSubMS(uint16_t maxWait)
+uint32_t SFE_UBLOX_GNSS::getTIMTPtowSubMS(uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
     initPacketUBXTIMTP();        // Check that RAM has been allocated for the TP data
@@ -18567,7 +18564,7 @@ uint32_t DevUBLOXGNSS::getTIMTPtowSubMS(uint16_t maxWait)
   return (packetUBXTIMTP->data.towSubMS);
 }
 
-uint16_t DevUBLOXGNSS::getTIMTPweek(uint16_t maxWait)
+uint16_t SFE_UBLOX_GNSS::getTIMTPweek(uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
     initPacketUBXTIMTP();        // Check that RAM has been allocated for the TP data
@@ -18583,7 +18580,7 @@ uint16_t DevUBLOXGNSS::getTIMTPweek(uint16_t maxWait)
 
 // Convert TIM TP to Unix epoch including microseconds
 // CAUTION! Assumes the time base is UTC and the week number is GPS
-uint32_t DevUBLOXGNSS::getTIMTPAsEpoch(uint32_t &microsecond, uint16_t maxWait)
+uint32_t SFE_UBLOX_GNSS::getTIMTPAsEpoch(uint32_t &microsecond, uint16_t maxWait)
 {
   if (packetUBXNAVPVT == NULL)
     initPacketUBXNAVPVT();        // Check that RAM has been allocated for the PVT data

@@ -1291,14 +1291,14 @@ public:
   void flushTIMTM2();                                                                                                 // Mark all the data as read/stale
   void logTIMTM2(bool enabled = true);                                                                                // Log data to file buffer
 
-  bool getTIMTP(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                                                                                                    // TIM TP
-  bool setAutoTIMTP(bool enabled, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                                               // Enable/disable automatic TIM TP reports at the navigation frequency
-  bool setAutoTIMTP(bool enabled, bool implicitUpdate, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                          // Enable/disable automatic TIM TP reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
-  bool setAutoTIMTPrate(uint8_t rate, bool implicitUpdate = true, uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);               // Set the rate for automatic TIM TP reports
-  bool setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP_data_t *), uint8_t layer = VAL_LAYER_RAM_BBR, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait); // Enable automatic TP reports at the navigation frequency. Data is accessed from the callback.
-  bool assumeAutoTIMTP(bool enabled, bool implicitUpdate = true);                                                                                                // In case no config access to the GPS is possible and TIM TP is send cyclically already
-  void flushTIMTP();                                                                                                                                             // Mark all the data as read/stale
-  void logTIMTP(bool enabled = true);                                                                                                                            // Log data to file buffer
+  bool getTIMTP(uint16_t maxWait = defaultMaxWait);                                                                                                    // TIM TP
+  bool setAutoTIMTP(bool enabled, uint16_t maxWait = defaultMaxWait);                                               // Enable/disable automatic TIM TP reports at the navigation frequency
+  bool setAutoTIMTP(bool enabled, bool implicitUpdate, uint16_t maxWait = defaultMaxWait);                          // Enable/disable automatic TIM TP reports at the navigation frequency, with implicitUpdate == false accessing stale data will not issue parsing of data in the rxbuffer of your interface, instead you have to call checkUblox when you want to perform an update
+  bool setAutoTIMTPrate(uint8_t rate, bool implicitUpdate = true, uint16_t maxWait = defaultMaxWait);               // Set the rate for automatic TIM TP reports
+  bool setAutoTIMTPcallbackPtr(void (*callbackPointerPtr)(UBX_TIM_TP_data_t *), uint16_t maxWait = defaultMaxWait); // Enable automatic TP reports at the navigation frequency. Data is accessed from the callback.
+  bool assumeAutoTIMTP(bool enabled, bool implicitUpdate = true);                                                   // In case no config access to the GPS is possible and TIM TP is send cyclically already
+  void flushTIMTP();                                                                                                // Mark all the data as read/stale
+  void logTIMTP(bool enabled = true);                                                                               // Log data to file buffer
 
   // Sensor fusion (dead reckoning) (ESF)
 
@@ -1523,10 +1523,10 @@ public:
 
   // Helper functions for TIM TP
 
-  uint32_t getTIMTPtowMS(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                          // Returns the UBX-TIM-TP towMS time pulse of week (ms)
-  uint32_t getTIMTPtowSubMS(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                       // Returns the UBX-TIM-TP submillisecond part of towMS (ms * 2^-32)
-  uint16_t getTIMTPweek(uint16_t maxWait = kUBLOXGNSSDefaultMaxWait);                           // Returns the UBX-TIM-TP time pulse week according to time base
-  uint32_t getTIMTPAsEpoch(uint32_t &microsecond, uint16_t maxWait = kUBLOXGNSSDefaultMaxWait); // Convert TIM TP to Unix Epoch - CAUTION! Assumes the time base is UTC and the week number is GPS
+  uint32_t getTIMTPtowMS(uint16_t maxWait = defaultMaxWait);                          // Returns the UBX-TIM-TP towMS time pulse of week (ms)
+  uint32_t getTIMTPtowSubMS(uint16_t maxWait = defaultMaxWait);                       // Returns the UBX-TIM-TP submillisecond part of towMS (ms * 2^-32)
+  uint16_t getTIMTPweek(uint16_t maxWait = defaultMaxWait);                           // Returns the UBX-TIM-TP time pulse week according to time base
+  uint32_t getTIMTPAsEpoch(uint32_t &microsecond, uint16_t maxWait = defaultMaxWait); // Convert TIM TP to Unix Epoch - CAUTION! Assumes the time base is UTC and the week number is GPS
 
   // Helper functions for ESF
 
