@@ -1523,6 +1523,7 @@ public:
 
   // Helper functions for TIM TP
 
+  int32_t getTIMTPqErr(uint16_t maxWait = defaultMaxWait);                          // Returns the UBX-TIM-TP qErr (ps)
   uint32_t getTIMTPtowMS(uint16_t maxWait = defaultMaxWait);                          // Returns the UBX-TIM-TP towMS time pulse of week (ms)
   uint32_t getTIMTPtowSubMS(uint16_t maxWait = defaultMaxWait);                       // Returns the UBX-TIM-TP submillisecond part of towMS (ms * 2^-32)
   uint16_t getTIMTPweek(uint16_t maxWait = defaultMaxWait);                           // Returns the UBX-TIM-TP time pulse week according to time base

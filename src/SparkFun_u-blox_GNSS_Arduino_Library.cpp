@@ -18536,6 +18536,20 @@ uint8_t SFE_UBLOX_GNSS::getAOPSTATUSstatus(uint16_t maxWait)
 
 // ***** TIM TP Helper Functions
 
+int32_t SFE_UBLOX_GNSS::getTIMTPqErr(uint16_t maxWait)
+{
+  if (packetUBXTIMTP == NULL)
+    initPacketUBXTIMTP();        // Check that RAM has been allocated for the TP data
+  if (packetUBXTIMTP == NULL) // Bail if the RAM allocation failed
+    return 0;
+
+  if (packetUBXTIMTP->moduleQueried.moduleQueried.bits.qErr == false)
+    getTIMTP(maxWait);
+  packetUBXTIMTP->moduleQueried.moduleQueried.bits.qErr = false; // Since we are about to give this to user, mark this data as stale
+  packetUBXTIMTP->moduleQueried.moduleQueried.bits.all = false;
+  return (packetUBXTIMTP->data.qErr);
+}
+
 uint32_t SFE_UBLOX_GNSS::getTIMTPtowMS(uint16_t maxWait)
 {
   if (packetUBXTIMTP == NULL)
