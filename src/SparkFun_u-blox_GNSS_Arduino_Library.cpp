@@ -1642,6 +1642,9 @@ uint16_t SFE_UBLOX_GNSS::getMaxPayloadSize(uint8_t Class, uint8_t ID)
     case UBX_TIM_TM2:
       maxSize = UBX_TIM_TM2_LEN;
       break;
+    case UBX_TIM_TP:
+      maxSize = UBX_TIM_TP_LEN;
+      break;
     }
   }
   break;
@@ -14368,10 +14371,10 @@ bool SFE_UBLOX_GNSS::setAutoTIMTPrate(uint8_t rate, bool implicitUpdate, uint16_
   bool ok = ((sendCommand(&packetCfg, maxWait)) == SFE_UBLOX_STATUS_DATA_SENT); // We are only expecting an ACK
   if (ok)
   {
-    packetUBXTIMTM2->automaticFlags.flags.bits.automatic = (rate > 0);
-    packetUBXTIMTM2->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
+    packetUBXTIMTP->automaticFlags.flags.bits.automatic = (rate > 0);
+    packetUBXTIMTP->automaticFlags.flags.bits.implicitUpdate = implicitUpdate;
   }
-  packetUBXTIMTM2->moduleQueried.moduleQueried.bits.all = false;
+  packetUBXTIMTP->moduleQueried.moduleQueried.bits.all = false;
   return ok;
 }
 
